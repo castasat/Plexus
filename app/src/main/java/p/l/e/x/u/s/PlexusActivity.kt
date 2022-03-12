@@ -1,6 +1,7 @@
 package p.l.e.x.u.s
 
 import android.Manifest.permission.*
+import android.app.AlertDialog
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Build.*
 import android.os.Bundle
@@ -28,6 +29,21 @@ class PlexusActivity : AppCompatActivity() {
 
     private fun observeLiveData() {
         observeRequestRuntimePermissionLiveData()
+        observeAlertDialogLiveData()
+    }
+
+    private fun observeAlertDialogLiveData() {
+        viewModel.showAlertDialogLiveData
+            .observe(this) { (positiveButtonListener, negativeButtonListener, info) ->
+                AlertDialog
+                    .Builder(this)
+                    .setTitle("Do you accept connection to ${info.endpointName}?")
+                    .setMessage("Confirm the code matches on both devices: ${info.authenticationDigits}")
+                    .setPositiveButton("Accept", positiveButtonListener)
+                    .setNegativeButton(android.R.string.cancel, negativeButtonListener)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show()
+            }
     }
 
     private fun observeRequestRuntimePermissionLiveData() {

@@ -3,6 +3,7 @@ package p.l.e.x.u.s
 import android.Manifest.permission.*
 import android.annotation.SuppressLint
 import android.app.Application
+import android.content.DialogInterface.OnClickListener
 import android.os.Build.*
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -19,6 +20,10 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
     private val _requestRuntimePermissionLiveData = MutableLiveData<Array<String>>()
     val requestRuntimePermissionLiveData: LiveData<Array<String>>
         get() = _requestRuntimePermissionLiveData
+    private val _showAlertDialogLiveData =
+        MutableLiveData<Triple<OnClickListener, OnClickListener, ConnectionInfo>>()
+    val showAlertDialogLiveData: LiveData<Triple<OnClickListener, OnClickListener, ConnectionInfo>>
+        get() = _showAlertDialogLiveData
 
     private val payloadCallback = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
@@ -28,17 +33,30 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
         override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) {
             log("PlexusViewModel.onPayloadTransferUpdate(): $endpointId update = $update")
         }
-
     }
 
     // for advertise
     private val connectionLifecycleCallback = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
             log("PlexusViewModel.onConnectionInitiated(): $endpointId connectionInfo = $info")
-            Nearby
-                .getConnectionsClient(appContext)
-                // TODO give opportunity to reject connection
-                .acceptConnection(endpointId, payloadCallback)
+            _showAlertDialogLiveData.postValue(
+                Triple(
+                    // positive button listener
+                    OnClickListener { _, _ ->
+                        Nearby
+                            .getConnectionsClient(appContext)
+                            .acceptConnection(endpointId, payloadCallback)
+                    },
+                    // negative button listener
+                    OnClickListener { _, _ ->
+                        Nearby
+                            .getConnectionsClient(appContext)
+                            .rejectConnection(endpointId)
+                    },
+                    // connectionInfo
+                    info
+                )
+            )
         }
 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
