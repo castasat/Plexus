@@ -40,9 +40,11 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
             log("PlexusViewModel.onPayloadReceived(): $endpointId payload = $payload")
             if (payload.type == Payload.Type.BYTES) {
                 // bytes payload received
-                val bytesString = payload.asBytes().toString()
-                log("PlexusViewModel.onPayloadReceived(): BYTES = $bytesString")
-                _showToastLiveData.postValue(bytesString)
+                payload.asBytes()?.let { byteArray ->
+                    val bytesString = byteArray.toString(Charsets.UTF_8)
+                    log("PlexusViewModel.onPayloadReceived(): BYTES = $bytesString")
+                    _showToastLiveData.postValue(bytesString)
+                }
             }
         }
 
@@ -210,7 +212,7 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
             .getConnectionsClient(appContext)
             .sendPayload(
                 endpointId,
-                Payload.fromBytes("Hello".toByteArray())
+                Payload.fromBytes("Hello".toByteArray(Charsets.UTF_8))
             )
     }
 
