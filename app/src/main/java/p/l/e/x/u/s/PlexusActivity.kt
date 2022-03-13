@@ -1,11 +1,14 @@
 package p.l.e.x.u.s
 
 import android.Manifest.permission.*
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Build.*
 import android.os.Bundle
+import android.view.View.*
 import android.widget.Button
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import p.l.e.x.u.s.PlexusApp.Companion.log
@@ -17,19 +20,51 @@ class PlexusActivity : AppCompatActivity() {
 
     private val advertiseButton: Button by lazy { findViewById(R.id.advertiseButton) }
     private val discoverButton: Button by lazy { findViewById(R.id.discoverButton) }
+    private val sendButton: Button by lazy { findViewById(R.id.sendButton) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_layout)
         observeLiveData()
         viewModel.init()
-        advertiseButton.setOnClickListener { viewModel.advertise() }
-        discoverButton.setOnClickListener { viewModel.discover() }
+        setListeners()
+    }
+
+    private fun setListeners() {
+        with(viewModel) {
+            advertiseButton.setOnClickListener { advertise() }
+            discoverButton.setOnClickListener { discover() }
+        }
     }
 
     private fun observeLiveData() {
         observeRequestRuntimePermissionLiveData()
+        observeShowSendButtonLiveData()
         observeAlertDialogLiveData()
+        observeShowToastLiveData()
+    }
+
+    private fun observeShowToastLiveData() {
+        viewModel.showToastLiveData
+            .observe(this) { toastMessage: String ->
+                Toast
+                    .makeText(this, toastMessage, Toast.LENGTH_LONG)
+                    .show()
+            }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun observeShowSendButtonLiveData() {
+        viewModel.showSendButtonLiveData
+            .observe(this) { endpointId: String ->
+                if (endpointId.isNotBlank()) {
+                    with(sendButton) {
+                        visibility = VISIBLE
+                        text = "Send\n to $endpointId"
+                        setOnClickListener { viewModel.send(endpointId) }
+                    }
+                }
+            }
     }
 
     private fun observeAlertDialogLiveData() {

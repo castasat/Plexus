@@ -17,21 +17,56 @@ import p.l.e.x.u.s.PlexusApp.Companion.log
 class PlexusViewModel(application: Application) : AndroidViewModel(application) {
     @SuppressLint("StaticFieldLeak")
     private val appContext = getApplication<Application>().applicationContext
+
     private val _requestRuntimePermissionLiveData = MutableLiveData<Array<String>>()
     val requestRuntimePermissionLiveData: LiveData<Array<String>>
         get() = _requestRuntimePermissionLiveData
+
     private val _showAlertDialogLiveData =
         MutableLiveData<Triple<OnClickListener, OnClickListener, ConnectionInfo>>()
     val showAlertDialogLiveData: LiveData<Triple<OnClickListener, OnClickListener, ConnectionInfo>>
         get() = _showAlertDialogLiveData
 
+    private val _showSendButtonLiveData = MutableLiveData<String>()
+    val showSendButtonLiveData: LiveData<String>
+        get() = _showSendButtonLiveData
+
+    private val _showToastLiveData = MutableLiveData<String>()
+    val showToastLiveData: LiveData<String>
+        get() = _showToastLiveData
+
     private val payloadCallback = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
             log("PlexusViewModel.onPayloadReceived(): $endpointId payload = $payload")
+            if (payload.type == Payload.Type.BYTES) {
+                // bytes payload received
+                val bytesString = payload.asBytes().toString()
+                log("PlexusViewModel.onPayloadReceived(): BYTES = $bytesString")
+                _showToastLiveData.postValue(bytesString)
+            }
         }
 
         override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) {
             log("PlexusViewModel.onPayloadTransferUpdate(): $endpointId update = $update")
+            val status = update.status
+            log("PlexusViewModel.onPayloadTransferUpdate(): status = $status")
+            when (status) {
+                SUCCESS -> {
+                    log("PlexusViewModel.onPayloadTransferUpdate(): file or stream payload received")
+                    // TODO
+                }
+                ERROR -> {
+                    log("PlexusViewModel.onPayloadTransferUpdate(): error receiving payload")
+                    // TODO
+                }
+                else -> {
+                    log(
+                        "PlexusViewModel.onPayloadTransferUpdate(): " +
+                                "receiving payload - other situation"
+                    )
+                    // TODO
+                }
+            }
         }
     }
 
@@ -62,8 +97,11 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
             log("PlexusViewModel.onConnectionResult(): $endpointId connectionResolution = $result")
             when (result.status.statusCode) {
-                STATUS_OK ->
+                STATUS_OK -> {
                     log("PlexusViewModel.onConnectionResult(): STATUS_OK")
+                    // show button to send payload
+                    _showSendButtonLiveData.postValue(endpointId)
+                }
                 STATUS_CONNECTION_REJECTED ->
                     log("PlexusViewModel.onConnectionResult(): STATUS_CONNECTION_REJECTED")
                 STATUS_ERROR ->
@@ -159,6 +197,21 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
                 log("PlexusViewModel.discover(): error = $exception")
                 exception.printStackTrace()
             }
+    }
+
+    fun send(endpointId: String) {
+        log("PlexusViewModel.send()")
+        sendBytes(endpointId)
+    }
+
+    private fun sendBytes(endpointId: String) {
+        log("PlexusViewModel.sendBytes()")
+        Nearby
+            .getConnectionsClient(appContext)
+            .sendPayload(
+                endpointId,
+                Payload.fromBytes("Hello".toByteArray())
+            )
     }
 
     companion object {
