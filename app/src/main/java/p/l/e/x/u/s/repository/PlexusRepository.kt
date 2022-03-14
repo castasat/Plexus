@@ -6,9 +6,15 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
-import p.l.e.x.u.s.application.PlexusApp
+import com.google.android.gms.nearby.connection.ConnectionsStatusCodes.*
+import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.schedulers.Schedulers
+import p.l.e.x.u.s.application.PlexusApp.Companion.log
+import p.l.e.x.u.s.connection.nearby.NearbyApi
 
 class PlexusRepository(private val appContext: Context) {
+    val compositeDisposable = CompositeDisposable()
+    private val nearbyApi by lazy { NearbyApi(appContext) }
 
     private val _showAlertDialogLiveData =
         MutableLiveData<Triple<OnClickListener, OnClickListener, ConnectionInfo>>()
@@ -25,29 +31,31 @@ class PlexusRepository(private val appContext: Context) {
 
     private val endpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
-            PlexusApp.log("PlexusViewModel.onEndpointFound(): $endpointId discoveryEndpointInfo = $info")
-            Nearby
-                .getConnectionsClient(appContext)
-                .requestConnection(
-                    SERVICE_ID,
-                    endpointId,
-                    connectionLifecycleCallback
-                )
-                .addOnSuccessListener { PlexusApp.log("PlexusViewModel.onEndpointFound(): success") }
-                .addOnFailureListener { exception ->
-                    PlexusApp.log("PlexusViewModel.onEndpointFound(): error = $exception")
-                    exception.printStackTrace()
-                }
+            log("PlexusRepository.onEndpointFound(): $endpointId discoveryEndpointInfo = $info")
+            compositeDisposable.add(
+                nearbyApi.requestConnection(endpointId, connectionLifecycleCallback)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.io())
+                    .subscribe(
+                        {
+                            log("PlexusRepository.onEndpointFound(): requestConnection() completed")
+                        },
+                        { throwable ->
+                            log("PlexusRepository.onEndpointFound(): error = $throwable")
+                            throwable.printStackTrace()
+                        }
+                    )
+            )
         }
 
         override fun onEndpointLost(endpointId: String) {
-            PlexusApp.log("PlexusViewModel.onEndpointLost(): $endpointId")
+            log("PlexusRepository.onEndpointLost(): $endpointId")
         }
     }
 
     private val connectionLifecycleCallback = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
-            PlexusApp.log("PlexusViewModel.onConnectionInitiated(): $endpointId connectionInfo = $info")
+            log("PlexusRepository.onConnectionInitiated(): $endpointId connectionInfo = $info")
             _showAlertDialogLiveData.postValue(
                 Triple(
                     // positive button listener
@@ -69,103 +77,122 @@ class PlexusRepository(private val appContext: Context) {
         }
 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
-            PlexusApp.log("PlexusViewModel.onConnectionResult(): $endpointId connectionResolution = $result")
+            log("PlexusRepository.onConnectionResult(): $endpointId connectionResolution = $result")
             when (result.status.statusCode) {
-                ConnectionsStatusCodes.STATUS_OK -> {
-                    PlexusApp.log("PlexusViewModel.onConnectionResult(): STATUS_OK")
+                STATUS_OK -> {
+                    log("PlexusRepository.onConnectionResult(): STATUS_OK")
                     // show button to send payload
                     _showSendButtonLiveData.postValue(endpointId)
                 }
-                ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED ->
-                    PlexusApp.log("PlexusViewModel.onConnectionResult(): STATUS_CONNECTION_REJECTED")
-                ConnectionsStatusCodes.STATUS_ERROR ->
-                    PlexusApp.log("PlexusViewModel.onConnectionResult(): STATUS_ERROR")
-                else -> PlexusApp.log(
-                    "PlexusViewModel.onConnectionResult(): " +
+                STATUS_CONNECTION_REJECTED ->
+                    log("PlexusRepository.onConnectionResult(): STATUS_CONNECTION_REJECTED")
+                STATUS_ERROR ->
+                    log("PlexusRepository.onConnectionResult(): STATUS_ERROR")
+                else -> log(
+                    "PlexusRepository.onConnectionResult(): " +
                             "statusCode = ${result.status.statusCode}"
                 )
             }
         }
 
         override fun onDisconnected(endpointId: String) {
-            PlexusApp.log("PlexusViewModel.onDisconnected() p0")
+            log("PlexusRepository.onDisconnected(): endpointId")
         }
     }
 
     private val payloadCallback = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
-            PlexusApp.log("PlexusViewModel.onPayloadReceived(): $endpointId payload = $payload")
+            log("PlexusRepository.onPayloadReceived(): $endpointId payload = $payload")
             if (payload.type == Payload.Type.BYTES) {
                 // bytes payload received
                 payload.asBytes()?.let { byteArray ->
                     val bytesString = byteArray.toString(Charsets.UTF_8)
-                    PlexusApp.log("PlexusViewModel.onPayloadReceived(): BYTES = $bytesString")
+                    log("PlexusRepository.onPayloadReceived(): BYTES = $bytesString")
                     _showToastLiveData.postValue(bytesString)
                 }
             }
         }
 
         override fun onPayloadTransferUpdate(endpointId: String, update: PayloadTransferUpdate) {
-            PlexusApp.log("PlexusViewModel.onPayloadTransferUpdate(): $endpointId update = $update")
+            log("PlexusRepository.onPayloadTransferUpdate(): $endpointId update = $update")
             val status = update.status
-            PlexusApp.log("PlexusViewModel.onPayloadTransferUpdate(): status = $status")
+            log("PlexusRepository.onPayloadTransferUpdate(): status = $status")
             when (status) {
-                ConnectionsStatusCodes.SUCCESS -> {
-                    PlexusApp.log("PlexusViewModel.onPayloadTransferUpdate(): file or stream payload received")
-                    // TODO
+                SUCCESS -> {
+                    log("PlexusRepository.onPayloadTransferUpdate(): file or stream payload received")
                 }
-                ConnectionsStatusCodes.ERROR -> {
-                    PlexusApp.log("PlexusViewModel.onPayloadTransferUpdate(): error receiving payload")
-                    // TODO
+                ERROR -> {
+                    log("PlexusRepository.onPayloadTransferUpdate(): error receiving payload")
                 }
                 else -> {
-                    PlexusApp.log(
-                        "PlexusViewModel.onPayloadTransferUpdate(): " +
+                    log(
+                        "PlexusRepository.onPayloadTransferUpdate(): " +
                                 "receiving payload - other situation"
                     )
-                    // TODO
                 }
             }
         }
     }
 
     fun advertise() {
+        log("PlexusRepository.advertise()")
         // TODO start advertising only once for a limited period of time
         // TODO stop advertising
-        Nearby
-            .getConnectionsClient(appContext)
-            // TODO endpointInfo : byte[] OR name : String
-            .startAdvertising(
-                SERVICE_ID,
-                SERVICE_ID,
-                connectionLifecycleCallback,
-                AdvertisingOptions.Builder().setStrategy(Strategy.P2P_CLUSTER).build()
-            )
-            .addOnSuccessListener { PlexusApp.log("PlexusViewModel.advertise(): success") }
-            .addOnFailureListener { exception ->
-                PlexusApp.log("PlexusViewModel.advertise(): error = $exception")
-                exception.printStackTrace()
-            }
+        // TODO send signal to processor
+        compositeDisposable.add(
+            nearbyApi.advertise(connectionLifecycleCallback)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .subscribe(
+                    {
+                        log("Repository.advertise(): completed")
+                    },
+                    { throwable ->
+                        log("Repository.advertise(): error = $throwable")
+                        throwable.printStackTrace()
+                    }
+                )
+        )
     }
+
 
     fun discover() {
+        log("Repository.discover()")
         // TODO start discovering only once
         // TODO stop discovering
-        Nearby
-            .getConnectionsClient(appContext)
-            .startDiscovery(
-                SERVICE_ID,
-                endpointDiscoveryCallback,
-                DiscoveryOptions.Builder().setStrategy(Strategy.P2P_CLUSTER).build()
-            )
-            .addOnSuccessListener { PlexusApp.log("PlexusViewModel.discover(): success") }
-            .addOnFailureListener { exception ->
-                PlexusApp.log("PlexusViewModel.discover(): error = $exception")
-                exception.printStackTrace()
-            }
+        // TODO send signal to processor
+        compositeDisposable.add(
+            nearbyApi.discover(endpointDiscoveryCallback)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .subscribe(
+                    {
+                        log("Repository.discover(): completed")
+                    },
+                    { throwable ->
+                        log("Repository.discover(): error = $throwable")
+                        throwable.printStackTrace()
+                    }
+                )
+        )
     }
 
-    companion object {
-        private const val SERVICE_ID = "p.l.e.x.u.s"
+    fun sendBytes(endpointId: String) {
+        log("Repository.sendBytes()")
+        // TODO send to processor
+        compositeDisposable.add(
+            nearbyApi.sendBytes(endpointId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .subscribe(
+                    {
+                        log("Repository.sendBytes(): completed")
+                    },
+                    { throwable ->
+                        log("Repository.sendBytes(): error = $throwable")
+                        throwable.printStackTrace()
+                    }
+                )
+        )
     }
 }
