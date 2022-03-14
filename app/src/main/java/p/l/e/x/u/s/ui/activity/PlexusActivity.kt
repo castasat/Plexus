@@ -1,4 +1,4 @@
-package p.l.e.x.u.s
+package p.l.e.x.u.s.ui.activity
 
 import android.Manifest.permission.*
 import android.annotation.SuppressLint
@@ -9,10 +9,13 @@ import android.os.Bundle
 import android.view.View.*
 import android.widget.Button
 import android.widget.Toast
+import android.widget.Toast.LENGTH_SHORT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import p.l.e.x.u.s.PlexusApp.Companion.log
-import p.l.e.x.u.s.PlexusViewModel.Companion.CODE
+import p.l.e.x.u.s.viewmodel.PlexusViewModel
+import p.l.e.x.u.s.application.PlexusApp.Companion.log
+import p.l.e.x.u.s.viewmodel.PlexusViewModel.Companion.CODE
+import p.l.e.x.u.s.R
 
 class PlexusActivity : AppCompatActivity() {
     private var allPermissionsGranted: Boolean = true
@@ -26,15 +29,8 @@ class PlexusActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_layout)
         observeLiveData()
-        viewModel.init()
+        initViewModel()
         setListeners()
-    }
-
-    private fun setListeners() {
-        with(viewModel) {
-            advertiseButton.setOnClickListener { advertise() }
-            discoverButton.setOnClickListener { discover() }
-        }
     }
 
     private fun observeLiveData() {
@@ -44,11 +40,20 @@ class PlexusActivity : AppCompatActivity() {
         observeShowToastLiveData()
     }
 
+    private fun initViewModel() = viewModel.init()
+
+    private fun setListeners() {
+        with(viewModel) {
+            advertiseButton.setOnClickListener { advertise() }
+            discoverButton.setOnClickListener { discover() }
+        }
+    }
+
     private fun observeShowToastLiveData() {
         viewModel.showToastLiveData
             .observe(this) { toastMessage: String ->
                 Toast
-                    .makeText(this, toastMessage, Toast.LENGTH_LONG)
+                    .makeText(this, toastMessage, LENGTH_SHORT)
                     .show()
             }
     }
@@ -60,7 +65,7 @@ class PlexusActivity : AppCompatActivity() {
                 if (endpointId.isNotBlank()) {
                     with(sendButton) {
                         visibility = VISIBLE
-                        text = "Send\n to $endpointId"
+                        text = "Send \nto $endpointId"
                         setOnClickListener { viewModel.send(endpointId) }
                     }
                 }
@@ -72,7 +77,7 @@ class PlexusActivity : AppCompatActivity() {
             .observe(this) { (positiveButtonListener, negativeButtonListener, info) ->
                 AlertDialog
                     .Builder(this)
-                    .setTitle("Do you accept connection to ${info.endpointName}?")
+                    .setTitle("Connect to ${info.endpointName}")
                     .setMessage("Confirm the code matches on both devices: ${info.authenticationDigits}")
                     .setPositiveButton("Accept", positiveButtonListener)
                     .setNegativeButton(android.R.string.cancel, negativeButtonListener)

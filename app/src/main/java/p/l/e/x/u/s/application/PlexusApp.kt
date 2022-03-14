@@ -1,4 +1,4 @@
-package p.l.e.x.u.s
+package p.l.e.x.u.s.application
 
 import android.app.Application
 import android.util.Log

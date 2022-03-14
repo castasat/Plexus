@@ -28,7 +28,7 @@
             android:name="android.test.runner"
             android:required="false" />
         <activity
-            android:name=".PlexusActivity"
+            android:name=".ui.activity.PlexusActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
