@@ -27,9 +27,14 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
     private fun requestRuntimePermissionCheck(permissions: Array<String>) =
         _requestRuntimePermissionLiveData.postValue(permissions)
 
-    fun advertise() = repository.advertise()
-    fun discover() = repository.discover()
-    fun send(endpointId: String) = sendBytes(endpointId)
+    fun startAdvertising() = repository.startAdvertising()
+    fun startDiscovering() = repository.startDiscovering()
+    fun stopAdvertising() = repository.stopAdvertising()
+    fun stopDiscovering() = repository.stopDiscovering()
+    fun send(endpointId: String) {
+        sendBytes(endpointId)
+    }
+
     private fun sendBytes(endpointId: String) = repository.sendBytes(endpointId)
 
     override fun onCleared() {

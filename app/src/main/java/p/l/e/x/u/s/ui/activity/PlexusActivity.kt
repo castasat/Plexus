@@ -44,8 +44,8 @@ class PlexusActivity : AppCompatActivity() {
 
     private fun setListeners() {
         with(viewModel) {
-            advertiseButton.setOnClickListener { advertise() }
-            discoverButton.setOnClickListener { discover() }
+            advertiseButton.setOnClickListener { startAdvertising() }
+            discoverButton.setOnClickListener { startDiscovering() }
         }
     }
 

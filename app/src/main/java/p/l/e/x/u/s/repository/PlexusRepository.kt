@@ -7,13 +7,14 @@ import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.nearby.connection.ConnectionsStatusCodes.*
+import com.google.android.gms.nearby.connection.Payload.Type.*
 import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.processors.PublishProcessor
 import io.reactivex.rxjava3.schedulers.Schedulers
 import p.l.e.x.u.s.application.PlexusApp.Companion.log
 import p.l.e.x.u.s.connection.nearby.NearbyApi
 
 class PlexusRepository(private val appContext: Context) {
-    val compositeDisposable = CompositeDisposable()
     private val nearbyApi by lazy { NearbyApi(appContext) }
 
     private val _showAlertDialogLiveData =
@@ -28,6 +29,12 @@ class PlexusRepository(private val appContext: Context) {
     private val _showToastLiveData = MutableLiveData<String>()
     val showToastLiveData: LiveData<String>
         get() = _showToastLiveData
+
+    // RxJava
+    val compositeDisposable = CompositeDisposable()
+    private val sendBytesToEndpointProcessor = PublishProcessor.create<String>()
+    private val advertiseProcessor = PublishProcessor.create<Boolean>()
+    private val discoverProcessor = PublishProcessor.create<Boolean>()
 
     private val endpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
@@ -103,7 +110,7 @@ class PlexusRepository(private val appContext: Context) {
     private val payloadCallback = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
             log("PlexusRepository.onPayloadReceived(): $endpointId payload = $payload")
-            if (payload.type == Payload.Type.BYTES) {
+            if (payload.type == BYTES) {
                 // bytes payload received
                 payload.asBytes()?.let { byteArray ->
                     val bytesString = byteArray.toString(Charsets.UTF_8)
@@ -134,65 +141,121 @@ class PlexusRepository(private val appContext: Context) {
         }
     }
 
-    fun advertise() {
-        log("PlexusRepository.advertise()")
-        // TODO start advertising only once for a limited period of time
-        // TODO stop advertising
-        // TODO send signal to processor
+    init {
+        subscribeToSendBytesToEndpointProcessor()
+        subscribeToAdvertiseProcessor()
+        subscribeToDiscoverProcessor()
+    }
+
+    private fun subscribeToDiscoverProcessor() {
         compositeDisposable.add(
-            nearbyApi.advertise(connectionLifecycleCallback)
+            discoverProcessor
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .distinctUntilChanged() // only once for the same value
+                // TODO for a limited period of time
+                .switchMapCompletable { shouldDiscover: Boolean ->
+                    log(
+                        "PlexusRepository.subscribeToDiscoverProcessor(): " +
+                                "shouldDiscover = $shouldDiscover"
+                    )
+                    if (shouldDiscover) {
+                        nearbyApi.startDiscovering(endpointDiscoveryCallback)
+                    } else {
+                        nearbyApi.stopDiscovering()
+                    }
+                }
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
                 .subscribe(
                     {
-                        log("Repository.advertise(): completed")
+                        log("PlexusRepository.subscribeToDiscoverProcessor(): completed")
                     },
                     { throwable ->
-                        log("Repository.advertise(): error = $throwable")
+                        log("PlexusRepository.subscribeToDiscoverProcessor(): error = $throwable")
                         throwable.printStackTrace()
                     }
                 )
         )
     }
 
-
-    fun discover() {
-        log("Repository.discover()")
-        // TODO start discovering only once
-        // TODO stop discovering
-        // TODO send signal to processor
+    private fun subscribeToAdvertiseProcessor() {
         compositeDisposable.add(
-            nearbyApi.discover(endpointDiscoveryCallback)
+            advertiseProcessor
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .distinctUntilChanged() // only once for the same value
+                // TODO for a limited period of time
+                .switchMapCompletable { shouldAdvertise: Boolean ->
+                    log(
+                        "PlexusRepository.subscribeToAdvertiseProcessor(): " +
+                                "shouldAdvertise = $shouldAdvertise"
+                    )
+                    if (shouldAdvertise) {
+                        nearbyApi.startAdvertising(connectionLifecycleCallback)
+                    } else {
+                        nearbyApi.stopAdvertising()
+                    }
+                }
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
                 .subscribe(
                     {
-                        log("Repository.discover(): completed")
+                        log("PlexusRepository.subscribeToAdvertiseProcessor(): completed")
                     },
                     { throwable ->
-                        log("Repository.discover(): error = $throwable")
+                        log("PlexusRepository.subscribeToAdvertiseProcessor(): error = $throwable")
                         throwable.printStackTrace()
                     }
                 )
         )
+    }
+
+    private fun subscribeToSendBytesToEndpointProcessor() {
+        compositeDisposable.add(
+            sendBytesToEndpointProcessor
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .switchMapCompletable { endpointId: String ->
+                    log("PlexusRepository.subscribeToSendBytesToEndpointProcessor()")
+                    nearbyApi.sendBytes(endpointId)
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .subscribe(
+                    {
+                        log("PlexusRepository.sendBytes(): completed")
+                    },
+                    { throwable ->
+                        log("PlexusRepository.sendBytes(): error = $throwable")
+                        throwable.printStackTrace()
+                    }
+                )
+        )
+    }
+
+    fun startAdvertising() {
+        log("PlexusRepository.startAdvertising()")
+        advertiseProcessor.onNext(true)
+    }
+
+    fun stopAdvertising() {
+        log("PlexusRepository.stopAdvertising()")
+        advertiseProcessor.onNext(false)
+    }
+
+    fun startDiscovering() {
+        log("PlexusRepository.startDiscovering()")
+        discoverProcessor.onNext(true)
+    }
+
+    fun stopDiscovering() {
+        log("PlexusRepository.stopDiscovering()")
+        discoverProcessor.onNext(false)
     }
 
     fun sendBytes(endpointId: String) {
-        log("Repository.sendBytes()")
-        // TODO send to processor
-        compositeDisposable.add(
-            nearbyApi.sendBytes(endpointId)
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .subscribe(
-                    {
-                        log("Repository.sendBytes(): completed")
-                    },
-                    { throwable ->
-                        log("Repository.sendBytes(): error = $throwable")
-                        throwable.printStackTrace()
-                    }
-                )
-        )
+        log("PlexusRepository.sendBytes(): endpointId = $endpointId")
+        sendBytesToEndpointProcessor.onNext(endpointId)
     }
 }

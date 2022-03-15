@@ -36,7 +36,7 @@ class NearbyApi(private val appContext: Context) {
                 .addOnFailureListener { exception -> emitter.onError(exception) }
         }
 
-    fun advertise(connectionLifecycleCallback: ConnectionLifecycleCallback): Completable =
+    fun startAdvertising(connectionLifecycleCallback: ConnectionLifecycleCallback): Completable =
         Completable.create { emitter: CompletableEmitter ->
             nearbyClient
                 .startAdvertising(
@@ -49,7 +49,9 @@ class NearbyApi(private val appContext: Context) {
                 .addOnFailureListener { exception -> emitter.onError(exception) }
         }
 
-    fun discover(endpointDiscoveryCallback: EndpointDiscoveryCallback): Completable =
+    fun stopAdvertising(): Completable = Completable.fromAction { nearbyClient.stopAdvertising() }
+
+    fun startDiscovering(endpointDiscoveryCallback: EndpointDiscoveryCallback): Completable =
         Completable.create { emitter: CompletableEmitter ->
             nearbyClient
                 .startDiscovery(
@@ -60,6 +62,8 @@ class NearbyApi(private val appContext: Context) {
                 .addOnSuccessListener { emitter.onComplete() }
                 .addOnFailureListener { exception -> emitter.onError(exception) }
         }
+
+    fun stopDiscovering(): Completable = Completable.fromAction { nearbyClient.stopDiscovery() }
 
     companion object {
         private const val SERVICE_ID = "p.l.e.x.u.s"
