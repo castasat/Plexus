@@ -7,21 +7,21 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/advertiseButton"
         style="?attr/materialButtonOutlinedStyle"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="@string/advertise"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:text="@string/startAdvertising"
+        app:layout_constraintEnd_toEndOf="@id/discoverButton"
+        app:layout_constraintStart_toStartOf="@id/discoverButton"
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/discoverButton"
         style="?attr/materialButtonOutlinedStyle"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/discover"
-        app:layout_constraintEnd_toEndOf="@id/advertiseButton"
-        app:layout_constraintStart_toStartOf="@id/advertiseButton"
+        android:text="@string/startDiscovering"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/advertiseButton" />
 
     <com.google.android.material.button.MaterialButton

@@ -160,13 +160,13 @@ class PlexusRepository(private val appContext: Context) {
                                 "shouldDiscover = $shouldDiscover"
                     )
                     if (shouldDiscover) {
+                        log("PlexusRepository.subscribeToDiscoverProcessor(): start")
                         nearbyApi.startDiscovering(endpointDiscoveryCallback)
                     } else {
+                        log("PlexusRepository.subscribeToDiscoverProcessor(): stop")
                         nearbyApi.stopDiscovering()
                     }
                 }
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
                 .subscribe(
                     {
                         log("PlexusRepository.subscribeToDiscoverProcessor(): completed")
@@ -192,13 +192,13 @@ class PlexusRepository(private val appContext: Context) {
                                 "shouldAdvertise = $shouldAdvertise"
                     )
                     if (shouldAdvertise) {
+                        log("PlexusRepository.subscribeToAdvertiseProcessor(): start")
                         nearbyApi.startAdvertising(connectionLifecycleCallback)
                     } else {
+                        log("PlexusRepository.subscribeToAdvertiseProcessor(): stop")
                         nearbyApi.stopAdvertising()
                     }
                 }
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
                 .subscribe(
                     {
                         log("PlexusRepository.subscribeToAdvertiseProcessor(): completed")
@@ -220,8 +220,6 @@ class PlexusRepository(private val appContext: Context) {
                     log("PlexusRepository.subscribeToSendBytesToEndpointProcessor()")
                     nearbyApi.sendBytes(endpointId)
                 }
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
                 .subscribe(
                     {
                         log("PlexusRepository.sendBytes(): completed")

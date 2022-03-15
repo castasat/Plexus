@@ -19,6 +19,10 @@ import p.l.e.x.u.s.R
 
 class PlexusActivity : AppCompatActivity() {
     private var allPermissionsGranted: Boolean = true
+
+    private var shouldAdvertise: Boolean? = null
+    private var shouldDiscover: Boolean? = null
+
     private val viewModel: PlexusViewModel by viewModels()
 
     private val advertiseButton: Button by lazy { findViewById(R.id.advertiseButton) }
@@ -43,9 +47,33 @@ class PlexusActivity : AppCompatActivity() {
     private fun initViewModel() = viewModel.init()
 
     private fun setListeners() {
-        with(viewModel) {
-            advertiseButton.setOnClickListener { startAdvertising() }
-            discoverButton.setOnClickListener { startDiscovering() }
+        advertiseButton.setOnClickListener {
+            when (shouldAdvertise) {
+                null, true -> {
+                    viewModel.startAdvertising()
+                    advertiseButton.text = getString(R.string.stopAdvertising)
+                    shouldAdvertise = false
+                }
+                false -> {
+                    viewModel.stopAdvertising()
+                    advertiseButton.text = getString(R.string.startAdvertising)
+                    shouldAdvertise = true
+                }
+            }
+        }
+        discoverButton.setOnClickListener {
+            when (shouldDiscover) {
+                null, true -> {
+                    viewModel.startDiscovering()
+                    discoverButton.text = getString(R.string.stopDiscovering)
+                    shouldDiscover = false
+                }
+                false -> {
+                    viewModel.stopDiscovering()
+                    discoverButton.text = getString(R.string.startDiscovering)
+                    shouldDiscover = true
+                }
+            }
         }
     }
 

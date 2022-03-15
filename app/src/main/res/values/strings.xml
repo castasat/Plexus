@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Plexus</string>
-    <string name="advertise">Advertise</string>
-    <string name="discover">Discover</string>
+    <string name="startAdvertising">Start \nadvertising</string>
+    <string name="startDiscovering">Start \ndiscovering</string>
     <string name="send">Send</string>
+    <string name="stopAdvertising">Stop \nadvertising</string>
+    <string name="stopDiscovering">Stop \ndiscovering</string>
 </resources>

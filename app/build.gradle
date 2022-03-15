@@ -13,6 +13,7 @@ android {
         targetSdk 32
         versionCode 1
         versionName "1.0"
+        multiDexEnabled = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -40,6 +41,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.4.1'
     implementation 'androidx.fragment:fragment-ktx:1.4.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation("androidx.multidex:multidex:2.0.1")
     // nearby connection api
     implementation 'com.google.android.gms:play-services-nearby:18.0.2'
     // UI

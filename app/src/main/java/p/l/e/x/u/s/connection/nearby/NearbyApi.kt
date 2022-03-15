@@ -11,11 +11,11 @@ import io.reactivex.rxjava3.core.CompletableEmitter
 import p.l.e.x.u.s.application.PlexusApp.Companion.log
 
 class NearbyApi(private val appContext: Context) {
-    private val nearbyClient by lazy { Nearby.getConnectionsClient(appContext) }
-
     fun sendBytes(endpointId: String): Completable = Completable.fromCallable {
         if (bytes.size < MAX_BYTES_DATA_SIZE) {
-            nearbyClient.sendPayload(endpointId, fromBytes(bytes))
+            Nearby
+                .getConnectionsClient(appContext)
+                .sendPayload(endpointId, fromBytes(bytes))
         } else {
             log("NearbyApi.sendBytes(): bytesSize >= MAX_BYTES_DATA_SIZE (32768)")
         }
@@ -26,7 +26,8 @@ class NearbyApi(private val appContext: Context) {
         connectionLifecycleCallback: ConnectionLifecycleCallback
     ): Completable =
         Completable.create { emitter: CompletableEmitter ->
-            nearbyClient
+            Nearby
+                .getConnectionsClient(appContext)
                 .requestConnection(
                     SERVICE_ID,
                     endpointId,
@@ -36,9 +37,11 @@ class NearbyApi(private val appContext: Context) {
                 .addOnFailureListener { exception -> emitter.onError(exception) }
         }
 
-    fun startAdvertising(connectionLifecycleCallback: ConnectionLifecycleCallback): Completable =
-        Completable.create { emitter: CompletableEmitter ->
-            nearbyClient
+    fun startAdvertising(connectionLifecycleCallback: ConnectionLifecycleCallback): Completable {
+        log("NearbyApi.startAdvertising()")
+        return Completable.create { emitter: CompletableEmitter ->
+            Nearby
+                .getConnectionsClient(appContext)
                 .startAdvertising(
                     SERVICE_ID,
                     SERVICE_ID,
@@ -48,12 +51,22 @@ class NearbyApi(private val appContext: Context) {
                 .addOnSuccessListener { emitter.onComplete() }
                 .addOnFailureListener { exception -> emitter.onError(exception) }
         }
+    }
 
-    fun stopAdvertising(): Completable = Completable.fromAction { nearbyClient.stopAdvertising() }
+    fun stopAdvertising(): Completable {
+        log("NearbyApi.stopAdvertising()")
+        return Completable.fromAction {
+            Nearby
+                .getConnectionsClient(appContext)
+                .stopAdvertising()
+        }
+    }
 
-    fun startDiscovering(endpointDiscoveryCallback: EndpointDiscoveryCallback): Completable =
-        Completable.create { emitter: CompletableEmitter ->
-            nearbyClient
+    fun startDiscovering(endpointDiscoveryCallback: EndpointDiscoveryCallback): Completable {
+        log("NearbyApi.startDiscovering()")
+        return Completable.create { emitter: CompletableEmitter ->
+            Nearby
+                .getConnectionsClient(appContext)
                 .startDiscovery(
                     SERVICE_ID,
                     endpointDiscoveryCallback,
@@ -62,8 +75,16 @@ class NearbyApi(private val appContext: Context) {
                 .addOnSuccessListener { emitter.onComplete() }
                 .addOnFailureListener { exception -> emitter.onError(exception) }
         }
+    }
 
-    fun stopDiscovering(): Completable = Completable.fromAction { nearbyClient.stopDiscovery() }
+    fun stopDiscovering(): Completable {
+        log("NearbyApi.stopDiscovering()")
+        return Completable.fromAction {
+            Nearby
+                .getConnectionsClient(appContext)
+                .stopDiscovery()
+        }
+    }
 
     companion object {
         private const val SERVICE_ID = "p.l.e.x.u.s"
