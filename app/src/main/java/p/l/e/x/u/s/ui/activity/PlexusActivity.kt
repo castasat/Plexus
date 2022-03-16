@@ -19,16 +19,10 @@ import p.l.e.x.u.s.R
 
 class PlexusActivity : AppCompatActivity() {
     private var allPermissionsGranted: Boolean = true
-
-    private var shouldAdvertise: Boolean? = null
-    private var shouldDiscover: Boolean? = null
-
     private val viewModel: PlexusViewModel by viewModels()
-
     private val advertiseButton: Button by lazy { findViewById(R.id.advertiseButton) }
     private val discoverButton: Button by lazy { findViewById(R.id.discoverButton) }
     private val sendButton: Button by lazy { findViewById(R.id.sendButton) }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_layout)
@@ -42,39 +36,50 @@ class PlexusActivity : AppCompatActivity() {
         observeShowSendButtonLiveData()
         observeAlertDialogLiveData()
         observeShowToastLiveData()
+        observeIsAdvertisingLiveData()
+        observeIsDiscoveringLiveData()
     }
 
     private fun initViewModel() = viewModel.init()
-
     private fun setListeners() {
-        advertiseButton.setOnClickListener {
-            when (shouldAdvertise) {
-                null, true -> {
-                    viewModel.startAdvertising()
-                    advertiseButton.text = getString(R.string.stopAdvertising)
-                    shouldAdvertise = false
-                }
-                false -> {
-                    viewModel.stopAdvertising()
-                    advertiseButton.text = getString(R.string.startAdvertising)
-                    shouldAdvertise = true
-                }
-            }
-        }
-        discoverButton.setOnClickListener {
-            when (shouldDiscover) {
-                null, true -> {
-                    viewModel.startDiscovering()
-                    discoverButton.text = getString(R.string.stopDiscovering)
-                    shouldDiscover = false
-                }
-                false -> {
-                    viewModel.stopDiscovering()
-                    discoverButton.text = getString(R.string.startDiscovering)
-                    shouldDiscover = true
+        advertiseButton.setOnClickListener { viewModel.startAdvertising() }
+        discoverButton.setOnClickListener { viewModel.startDiscovering() }
+    }
+
+    private fun observeIsDiscoveringLiveData() {
+        viewModel.isDiscoveringLiveData
+            .observe(this) { isDiscovering: Boolean ->
+                with(discoverButton) {
+                    when (isDiscovering) {
+                        true -> {
+                            text = getString(R.string.stopDiscovering)
+                            setOnClickListener { viewModel.stopDiscovering() }
+                        }
+                        false -> {
+                            text = getString(R.string.startDiscovering)
+                            setOnClickListener { viewModel.startDiscovering() }
+                        }
+                    }
                 }
             }
-        }
+    }
+
+    private fun observeIsAdvertisingLiveData() {
+        viewModel.isAdvertisingLiveData
+            .observe(this) { isAdvertising: Boolean ->
+                with(advertiseButton) {
+                    when (isAdvertising) {
+                        true -> {
+                            text = getString(R.string.stopAdvertising)
+                            setOnClickListener { viewModel.stopAdvertising() }
+                        }
+                        false -> {
+                            text = getString(R.string.startAdvertising)
+                            setOnClickListener { viewModel.startAdvertising() }
+                        }
+                    }
+                }
+            }
     }
 
     private fun observeShowToastLiveData() {

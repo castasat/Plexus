@@ -17,6 +17,8 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
     val showAlertDialogLiveData by lazy { repository.showAlertDialogLiveData }
     val showSendButtonLiveData by lazy { repository.showSendButtonLiveData }
     val showToastLiveData by lazy { repository.showToastLiveData }
+    val isAdvertisingLiveData by lazy { repository.isAdvertisingLiveData }
+    val isDiscoveringLiveData by lazy { repository.isDiscoveringLiveData }
 
     private val _requestRuntimePermissionLiveData = MutableLiveData<Array<String>>()
     val requestRuntimePermissionLiveData: LiveData<Array<String>>

@@ -16,6 +16,8 @@ import p.l.e.x.u.s.connection.nearby.NearbyApi
 
 class PlexusRepository(private val appContext: Context) {
     private val nearbyApi by lazy { NearbyApi(appContext) }
+    val isAdvertisingLiveData: LiveData<Boolean> by lazy { nearbyApi.isAdvertisingLiveData }
+    val isDiscoveringLiveData: LiveData<Boolean> by lazy { nearbyApi.isDiscoveringLiveData }
 
     private val _showAlertDialogLiveData =
         MutableLiveData<Triple<OnClickListener, OnClickListener, ConnectionInfo>>()
@@ -153,7 +155,6 @@ class PlexusRepository(private val appContext: Context) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
                 .distinctUntilChanged() // only once for the same value
-                // TODO for a limited period of time
                 .switchMapCompletable { shouldDiscover: Boolean ->
                     log(
                         "PlexusRepository.subscribeToDiscoverProcessor(): " +
@@ -185,7 +186,6 @@ class PlexusRepository(private val appContext: Context) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
                 .distinctUntilChanged() // only once for the same value
-                // TODO for a limited period of time
                 .switchMapCompletable { shouldAdvertise: Boolean ->
                     log(
                         "PlexusRepository.subscribeToAdvertiseProcessor(): " +
