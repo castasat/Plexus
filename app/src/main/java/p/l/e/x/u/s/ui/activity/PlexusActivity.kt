@@ -38,7 +38,8 @@ class PlexusActivity : AppCompatActivity() {
     private fun observeLiveData() {
         observeRequestRuntimePermissionLiveData()
         observeShowSendButtonLiveData()
-        observeAlertDialogLiveData()
+        observeConnectionAlertDialogLiveData()
+        observeCoarseLocationAlertDialogLiveData()
         observeShowToastLiveData()
         observeIsAdvertisingLiveData()
         observeIsDiscoveringLiveData()
@@ -123,8 +124,8 @@ class PlexusActivity : AppCompatActivity() {
             }
     }
 
-    private fun observeAlertDialogLiveData() {
-        viewModel.showAlertDialogLiveData
+    private fun observeConnectionAlertDialogLiveData() {
+        viewModel.connectionAlertDialogLiveData
             .observe(this) { (positiveButtonListener, negativeButtonListener, info) ->
                 AlertDialog
                     .Builder(this)
@@ -132,6 +133,23 @@ class PlexusActivity : AppCompatActivity() {
                     .setMessage("Confirm the code matches on both devices: ${info.authenticationDigits}")
                     .setPositiveButton("Accept", positiveButtonListener)
                     .setNegativeButton(android.R.string.cancel, negativeButtonListener)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show()
+            }
+    }
+
+    private fun observeCoarseLocationAlertDialogLiveData() {
+        viewModel.coarseLocationAlertDialogLiveData
+            .observe(this) { message: String ->
+                AlertDialog
+                    .Builder(this)
+                    .setTitle("Missing permission access location")
+                    .setMessage(message)
+                    .setNeutralButton(android.R.string.ok) { dialog, _ ->
+                        // hide progress bar
+                        discoverProgressBar.visibility = GONE
+                        dialog.dismiss()
+                    }
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .show()
             }

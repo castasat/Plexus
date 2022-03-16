@@ -4,10 +4,12 @@ import android.content.Context
 import android.content.DialogInterface.OnClickListener
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.nearby.connection.ConnectionsStatusCodes.*
 import com.google.android.gms.nearby.connection.Payload.Type.*
+import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.processors.PublishProcessor
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -17,12 +19,20 @@ import p.l.e.x.u.s.connection.nearby.NearbyApi
 class PlexusRepository(private val appContext: Context) {
     private val nearbyApi by lazy { NearbyApi(appContext) }
     val isAdvertisingLiveData: LiveData<Boolean> by lazy { nearbyApi.isAdvertisingLiveData }
-    val isDiscoveringLiveData: LiveData<Boolean> by lazy { nearbyApi.isDiscoveringLiveData }
 
-    private val _showAlertDialogLiveData =
+    private val _isDiscoveringLiveData: MutableLiveData<Boolean>
+            by lazy { nearbyApi.isDiscoveringLiveData }
+    val isDiscoveringLiveData: LiveData<Boolean>
+        get() = _isDiscoveringLiveData
+
+    private val _connectionAlertDialogLiveData =
         MutableLiveData<Triple<OnClickListener, OnClickListener, ConnectionInfo>>()
-    val showAlertDialogLiveData: LiveData<Triple<OnClickListener, OnClickListener, ConnectionInfo>>
-        get() = _showAlertDialogLiveData
+    val connectionAlertDialogLiveData: LiveData<Triple<OnClickListener, OnClickListener, ConnectionInfo>>
+        get() = _connectionAlertDialogLiveData
+
+    private val _coarseLocationAlertDialogLiveData = MutableLiveData<String>()
+    val coarseLocationAlertDialogLiveData: LiveData<String>
+        get() = _coarseLocationAlertDialogLiveData
 
     private val _showSendButtonLiveData = MutableLiveData<String>()
     val showSendButtonLiveData: LiveData<String>
@@ -65,7 +75,7 @@ class PlexusRepository(private val appContext: Context) {
     private val connectionLifecycleCallback = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
             log("PlexusRepository.onConnectionInitiated(): $endpointId connectionInfo = $info")
-            _showAlertDialogLiveData.postValue(
+            _connectionAlertDialogLiveData.postValue(
                 Triple(
                     // positive button listener
                     OnClickListener { _, _ ->
@@ -135,8 +145,7 @@ class PlexusRepository(private val appContext: Context) {
                 }
                 else -> {
                     log(
-                        "PlexusRepository.onPayloadTransferUpdate(): " +
-                                "receiving payload - other situation"
+                        "PlexusRepository.onPayloadTransferUpdate(): status = $status"
                     )
                 }
             }
@@ -167,6 +176,31 @@ class PlexusRepository(private val appContext: Context) {
                         log("PlexusRepository.subscribeToDiscoverProcessor(): stop")
                         nearbyApi.stopDiscovering()
                     }
+                }
+                .retryWhen { throwableFlowable: Flowable<Throwable> ->
+                    throwableFlowable
+                        .flatMap { throwable: Throwable ->
+                            when {
+                                throwable is ApiException && throwable.message == ERROR_8034_MESSAGE -> {
+                                    log(
+                                        "PlexusRepository.subscribeToDiscoverProcessor(): " +
+                                                "throwableMessage = ${throwable.message}"
+                                    )
+                                    Flowable
+                                        .just(1)
+                                        .doOnNext {
+                                            // switch to stop discovering on UI
+                                            _isDiscoveringLiveData.postValue(false)
+                                            // show alert to enable GPS
+                                            _coarseLocationAlertDialogLiveData.postValue(
+                                                "Enable GPS to discover other devices"
+                                            )
+                                        }
+                                }
+                                // пропускаем остальные ошибки
+                                else -> Flowable.error<Throwable>(throwable)
+                            }
+                        }
                 }
                 .subscribe(
                     {
@@ -255,5 +289,9 @@ class PlexusRepository(private val appContext: Context) {
     fun sendBytes(endpointId: String) {
         log("PlexusRepository.sendBytes(): endpointId = $endpointId")
         sendBytesToEndpointProcessor.onNext(endpointId)
+    }
+
+    companion object {
+        private const val ERROR_8034_MESSAGE = "8034: MISSING_PERMISSION_ACCESS_COARSE_LOCATION"
     }
 }

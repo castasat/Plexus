@@ -18,10 +18,7 @@ class NearbyApi(private val appContext: Context) {
     private val _isAdvertisingLiveData = MutableLiveData<Boolean>()
     val isAdvertisingLiveData: LiveData<Boolean>
         get() = _isAdvertisingLiveData
-
-    private val _isDiscoveringLiveData = MutableLiveData<Boolean>()
-    val isDiscoveringLiveData: LiveData<Boolean>
-        get() = _isDiscoveringLiveData
+    val isDiscoveringLiveData = MutableLiveData<Boolean>()
 
     fun sendBytes(endpointId: String): Completable = Completable.fromCallable {
         if (bytes.size < MAX_BYTES_DATA_SIZE) {
@@ -93,7 +90,7 @@ class NearbyApi(private val appContext: Context) {
                     .addOnSuccessListener {
                         log("NearbyApi.startDiscovering(): completed")
                         emitter.onComplete()
-                        _isDiscoveringLiveData.postValue(true)
+                        isDiscoveringLiveData.postValue(true)
                     }
                     .addOnFailureListener { exception -> emitter.onError(exception) }
             }
@@ -105,7 +102,7 @@ class NearbyApi(private val appContext: Context) {
         Nearby
             .getConnectionsClient(appContext)
             .stopDiscovery()
-        _isDiscoveringLiveData.postValue(false)
+        isDiscoveringLiveData.postValue(false)
     }
 
     companion object {

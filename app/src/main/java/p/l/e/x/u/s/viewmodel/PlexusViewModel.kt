@@ -14,7 +14,8 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
     private val appContext = getApplication<Application>().applicationContext
     private val repository by lazy { PlexusRepository(appContext) }
 
-    val showAlertDialogLiveData by lazy { repository.showAlertDialogLiveData }
+    val connectionAlertDialogLiveData by lazy { repository.connectionAlertDialogLiveData }
+    val coarseLocationAlertDialogLiveData by lazy { repository.coarseLocationAlertDialogLiveData }
     val showSendButtonLiveData by lazy { repository.showSendButtonLiveData }
     val showToastLiveData by lazy { repository.showToastLiveData }
     val isAdvertisingLiveData by lazy { repository.isAdvertisingLiveData }
