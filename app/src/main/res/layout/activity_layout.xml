@@ -7,12 +7,25 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/advertiseButton"
         style="?attr/materialButtonOutlinedStyle"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/startAdvertising"
-        app:layout_constraintEnd_toEndOf="@id/discoverButton"
-        app:layout_constraintStart_toStartOf="@id/discoverButton"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintEnd_toStartOf="@id/advertiseProgress"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ProgressBar
+        android:id="@+id/advertiseProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/advertiseButton"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/advertiseButton"
+        app:layout_constraintTop_toTopOf="@id/advertiseButton" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/discoverButton"
@@ -20,9 +33,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/startDiscovering"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/discoverProgress"
+        app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/advertiseButton" />
+
+    <ProgressBar
+        android:id="@+id/discoverProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintBottom_toBottomOf="@id/discoverButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/discoverButton"
+        app:layout_constraintTop_toTopOf="@id/discoverButton" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/sendButton"

@@ -8,6 +8,7 @@ import android.os.Build.*
 import android.os.Bundle
 import android.view.View.*
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import androidx.activity.viewModels
@@ -23,6 +24,9 @@ class PlexusActivity : AppCompatActivity() {
     private val advertiseButton: Button by lazy { findViewById(R.id.advertiseButton) }
     private val discoverButton: Button by lazy { findViewById(R.id.discoverButton) }
     private val sendButton: Button by lazy { findViewById(R.id.sendButton) }
+    private val advertiseProgressBar: ProgressBar by lazy { findViewById(R.id.advertiseProgress) }
+    private val discoverProgressBar: ProgressBar by lazy { findViewById(R.id.discoverProgress) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_layout)
@@ -42,8 +46,14 @@ class PlexusActivity : AppCompatActivity() {
 
     private fun initViewModel() = viewModel.init()
     private fun setListeners() {
-        advertiseButton.setOnClickListener { viewModel.startAdvertising() }
-        discoverButton.setOnClickListener { viewModel.startDiscovering() }
+        advertiseButton.setOnClickListener {
+            advertiseProgressBar.visibility = VISIBLE
+            viewModel.startAdvertising()
+        }
+        discoverButton.setOnClickListener {
+            discoverProgressBar.visibility = VISIBLE
+            viewModel.startDiscovering()
+        }
     }
 
     private fun observeIsDiscoveringLiveData() {
@@ -53,11 +63,15 @@ class PlexusActivity : AppCompatActivity() {
                     when (isDiscovering) {
                         true -> {
                             text = getString(R.string.stopDiscovering)
+                            discoverProgressBar.visibility = GONE
                             setOnClickListener { viewModel.stopDiscovering() }
                         }
                         false -> {
                             text = getString(R.string.startDiscovering)
-                            setOnClickListener { viewModel.startDiscovering() }
+                            setOnClickListener {
+                                discoverProgressBar.visibility = VISIBLE
+                                viewModel.startDiscovering()
+                            }
                         }
                     }
                 }
@@ -71,11 +85,15 @@ class PlexusActivity : AppCompatActivity() {
                     when (isAdvertising) {
                         true -> {
                             text = getString(R.string.stopAdvertising)
+                            advertiseProgressBar.visibility = GONE
                             setOnClickListener { viewModel.stopAdvertising() }
                         }
                         false -> {
                             text = getString(R.string.startAdvertising)
-                            setOnClickListener { viewModel.startAdvertising() }
+                            setOnClickListener {
+                                advertiseProgressBar.visibility = VISIBLE
+                                viewModel.startAdvertising()
+                            }
                         }
                     }
                 }
