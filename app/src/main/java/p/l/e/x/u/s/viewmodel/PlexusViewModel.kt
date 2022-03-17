@@ -34,10 +34,8 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
     fun startDiscovering() = repository.startDiscovering()
     fun stopAdvertising() = repository.stopAdvertising()
     fun stopDiscovering() = repository.stopDiscovering()
-    fun send(endpointId: String) {
-        sendBytes(endpointId)
-    }
 
+    fun send(endpointId: String) = sendBytes(endpointId)
     private fun sendBytes(endpointId: String) = repository.sendBytes(endpointId)
 
     override fun onCleared() {

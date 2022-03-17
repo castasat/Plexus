@@ -115,7 +115,7 @@ class PlexusRepository(private val appContext: Context) {
         }
 
         override fun onDisconnected(endpointId: String) {
-            log("PlexusRepository.onDisconnected(): endpointId")
+            log("PlexusRepository.onDisconnected(): endpointId = $endpointId")
         }
     }
 
@@ -137,10 +137,10 @@ class PlexusRepository(private val appContext: Context) {
             val status = update.status
             log("PlexusRepository.onPayloadTransferUpdate(): status = $status")
             when (status) {
-                SUCCESS -> {
+                SUCCESS -> { // 0
                     log("PlexusRepository.onPayloadTransferUpdate(): file or stream payload received")
                 }
-                ERROR -> {
+                ERROR -> { // 13
                     log("PlexusRepository.onPayloadTransferUpdate(): error receiving payload")
                 }
                 else -> {

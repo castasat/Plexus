@@ -1,159 +1,39 @@
 package p.l.e.x.u.s.ui.activity
 
 import android.Manifest.permission.*
-import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Build.*
 import android.os.Bundle
-import android.view.View.*
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.Toast
-import android.widget.Toast.LENGTH_SHORT
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import p.l.e.x.u.s.viewmodel.PlexusViewModel
 import p.l.e.x.u.s.application.PlexusApp.Companion.log
 import p.l.e.x.u.s.viewmodel.PlexusViewModel.Companion.CODE
 import p.l.e.x.u.s.R
+import p.l.e.x.u.s.ui.fragment.ConnectionFragment
 
 class PlexusActivity : AppCompatActivity() {
     private var allPermissionsGranted: Boolean = true
     private val viewModel: PlexusViewModel by viewModels()
-    private val advertiseButton: Button by lazy { findViewById(R.id.advertiseButton) }
-    private val discoverButton: Button by lazy { findViewById(R.id.discoverButton) }
-    private val sendButton: Button by lazy { findViewById(R.id.sendButton) }
-    private val advertiseProgressBar: ProgressBar by lazy { findViewById(R.id.advertiseProgress) }
-    private val discoverProgressBar: ProgressBar by lazy { findViewById(R.id.discoverProgress) }
+    private val connectionFragment by lazy { ConnectionFragment() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_layout)
+        setContentView(R.layout.activity_plexus)
         observeLiveData()
         initViewModel()
-        setListeners()
+        supportFragmentManager
+            .beginTransaction()
+            .add(R.id.containerFragment, connectionFragment)
+            .addToBackStack("ConnectionFragment")
+            .commit()
     }
 
     private fun observeLiveData() {
         observeRequestRuntimePermissionLiveData()
-        observeShowSendButtonLiveData()
-        observeConnectionAlertDialogLiveData()
-        observeCoarseLocationAlertDialogLiveData()
-        observeShowToastLiveData()
-        observeIsAdvertisingLiveData()
-        observeIsDiscoveringLiveData()
     }
 
     private fun initViewModel() = viewModel.init()
-    private fun setListeners() {
-        advertiseButton.setOnClickListener {
-            advertiseProgressBar.visibility = VISIBLE
-            viewModel.startAdvertising()
-        }
-        discoverButton.setOnClickListener {
-            discoverProgressBar.visibility = VISIBLE
-            viewModel.startDiscovering()
-        }
-    }
-
-    private fun observeIsDiscoveringLiveData() {
-        viewModel.isDiscoveringLiveData
-            .observe(this) { isDiscovering: Boolean ->
-                with(discoverButton) {
-                    when (isDiscovering) {
-                        true -> {
-                            text = getString(R.string.stopDiscovering)
-                            discoverProgressBar.visibility = GONE
-                            setOnClickListener { viewModel.stopDiscovering() }
-                        }
-                        false -> {
-                            text = getString(R.string.startDiscovering)
-                            setOnClickListener {
-                                discoverProgressBar.visibility = VISIBLE
-                                viewModel.startDiscovering()
-                            }
-                        }
-                    }
-                }
-            }
-    }
-
-    private fun observeIsAdvertisingLiveData() {
-        viewModel.isAdvertisingLiveData
-            .observe(this) { isAdvertising: Boolean ->
-                with(advertiseButton) {
-                    when (isAdvertising) {
-                        true -> {
-                            text = getString(R.string.stopAdvertising)
-                            advertiseProgressBar.visibility = GONE
-                            setOnClickListener { viewModel.stopAdvertising() }
-                        }
-                        false -> {
-                            text = getString(R.string.startAdvertising)
-                            setOnClickListener {
-                                advertiseProgressBar.visibility = VISIBLE
-                                viewModel.startAdvertising()
-                            }
-                        }
-                    }
-                }
-            }
-    }
-
-    private fun observeShowToastLiveData() {
-        viewModel.showToastLiveData
-            .observe(this) { toastMessage: String ->
-                Toast
-                    .makeText(this, toastMessage, LENGTH_SHORT)
-                    .show()
-            }
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun observeShowSendButtonLiveData() {
-        viewModel.showSendButtonLiveData
-            .observe(this) { endpointId: String ->
-                if (endpointId.isNotBlank()) {
-                    with(sendButton) {
-                        visibility = VISIBLE
-                        text = "Send \nto $endpointId"
-                        setOnClickListener { viewModel.send(endpointId) }
-                    }
-                }
-            }
-    }
-
-    private fun observeConnectionAlertDialogLiveData() {
-        viewModel.connectionAlertDialogLiveData
-            .observe(this) { (positiveButtonListener, negativeButtonListener, info) ->
-                AlertDialog
-                    .Builder(this)
-                    .setTitle("Connect to ${info.endpointName}")
-                    .setMessage("Confirm the code matches on both devices: ${info.authenticationDigits}")
-                    .setPositiveButton("Accept", positiveButtonListener)
-                    .setNegativeButton(android.R.string.cancel, negativeButtonListener)
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show()
-            }
-    }
-
-    private fun observeCoarseLocationAlertDialogLiveData() {
-        viewModel.coarseLocationAlertDialogLiveData
-            .observe(this) { message: String ->
-                AlertDialog
-                    .Builder(this)
-                    .setTitle("Missing permission access location")
-                    .setMessage(message)
-                    .setNeutralButton(android.R.string.ok) { dialog, _ ->
-                        // hide progress bar
-                        discoverProgressBar.visibility = GONE
-                        dialog.dismiss()
-                    }
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show()
-            }
-    }
 
     private fun observeRequestRuntimePermissionLiveData() {
         viewModel.requestRuntimePermissionLiveData
