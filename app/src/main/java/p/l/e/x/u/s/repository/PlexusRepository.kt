@@ -44,7 +44,7 @@ class PlexusRepository(private val appContext: Context) {
 
     // RxJava
     val compositeDisposable = CompositeDisposable()
-    private val sendBytesToEndpointProcessor = PublishProcessor.create<String>()
+    private val sendBytesToEndpointProcessor = PublishProcessor.create<Pair<String, String>>()
     private val advertiseProcessor = PublishProcessor.create<Boolean>()
     private val discoverProcessor = PublishProcessor.create<Boolean>()
 
@@ -125,8 +125,8 @@ class PlexusRepository(private val appContext: Context) {
             if (payload.type == BYTES) {
                 // bytes payload received
                 payload.asBytes()?.let { byteArray ->
-                    val bytesString = byteArray.toString(Charsets.UTF_8)
-                    log("PlexusRepository.onPayloadReceived(): BYTES = $bytesString")
+                    val bytesString: String = byteArray.toString(Charsets.UTF_8)
+                    log("PlexusRepository.onPayloadReceived(): BYTES bytesString = $bytesString")
                     _showToastLiveData.postValue(bytesString)
                 }
             }
@@ -250,9 +250,10 @@ class PlexusRepository(private val appContext: Context) {
             sendBytesToEndpointProcessor
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
-                .switchMapCompletable { endpointId: String ->
-                    log("PlexusRepository.subscribeToSendBytesToEndpointProcessor()")
-                    nearbyApi.sendBytes(endpointId)
+                .switchMapCompletable { (endpointId: String, message: String) ->
+                    log("PlexusRepository.subscribeToSendBytesToEndpointProcessor(): " +
+                            "endpointId = $endpointId, message = $message")
+                    nearbyApi.sendBytes(endpointId, message)
                 }
                 .subscribe(
                     {
@@ -286,9 +287,9 @@ class PlexusRepository(private val appContext: Context) {
         discoverProcessor.onNext(false)
     }
 
-    fun sendBytes(endpointId: String) {
-        log("PlexusRepository.sendBytes(): endpointId = $endpointId")
-        sendBytesToEndpointProcessor.onNext(endpointId)
+    fun sendBytes(endpointId: String, message: String) {
+        log("PlexusRepository.sendBytes(): endpointId = $endpointId, message = $message")
+        sendBytesToEndpointProcessor.onNext(Pair(endpointId, message))
     }
 
     companion object {

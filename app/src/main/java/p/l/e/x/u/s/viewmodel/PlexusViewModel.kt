@@ -7,6 +7,7 @@ import android.os.Build.*
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import p.l.e.x.u.s.application.PlexusApp.Companion.log
 import p.l.e.x.u.s.repository.PlexusRepository
 
 class PlexusViewModel(application: Application) : AndroidViewModel(application) {
@@ -16,7 +17,7 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
 
     val connectionAlertDialogLiveData by lazy { repository.connectionAlertDialogLiveData }
     val coarseLocationAlertDialogLiveData by lazy { repository.coarseLocationAlertDialogLiveData }
-    val showSendButtonLiveData by lazy { repository.showSendButtonLiveData }
+    val showChatLiveData by lazy { repository.showSendButtonLiveData }
     val showToastLiveData by lazy { repository.showToastLiveData }
     val isAdvertisingLiveData by lazy { repository.isAdvertisingLiveData }
     val isDiscoveringLiveData by lazy { repository.isDiscoveringLiveData }
@@ -35,8 +36,10 @@ class PlexusViewModel(application: Application) : AndroidViewModel(application) 
     fun stopAdvertising() = repository.stopAdvertising()
     fun stopDiscovering() = repository.stopDiscovering()
 
-    fun send(endpointId: String) = sendBytes(endpointId)
-    private fun sendBytes(endpointId: String) = repository.sendBytes(endpointId)
+    fun sendBytes(endpointId: String, message: String) {
+        log("PlexusViewModel.sendBytes(): endpointId = $endpointId, message = $message")
+        repository.sendBytes(endpointId, message)
+    }
 
     override fun onCleared() {
         super.onCleared()

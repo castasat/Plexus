@@ -20,7 +20,9 @@ class NearbyApi(private val appContext: Context) {
         get() = _isAdvertisingLiveData
     val isDiscoveringLiveData = MutableLiveData<Boolean>()
 
-    fun sendBytes(endpointId: String): Completable = Completable.fromCallable {
+    fun sendBytes(endpointId: String, message: String): Completable = Completable.fromCallable {
+        log("NearbyApi.sendBytes(): endpointId = $endpointId, message = $message")
+        val bytes = message.toByteArray(Charsets.UTF_8)
         if (bytes.size < MAX_BYTES_DATA_SIZE) {
             Nearby
                 .getConnectionsClient(appContext)
@@ -107,7 +109,6 @@ class NearbyApi(private val appContext: Context) {
 
     companion object {
         private const val SERVICE_ID = "p.l.e.x.u.s"
-        private val bytes = "Hello".toByteArray(Charsets.UTF_8) // TODO
         private const val MAX_ADVERTISING_INTERVAL_MINUTES = 5L
         private const val MAX_DISCOVERING_INTERVAL_MINUTES = 5L
     }

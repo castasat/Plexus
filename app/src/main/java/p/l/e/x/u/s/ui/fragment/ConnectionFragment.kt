@@ -8,12 +8,14 @@ import android.view.View
 import android.view.View.*
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import p.l.e.x.u.s.R
+import p.l.e.x.u.s.application.PlexusApp.Companion.log
 import p.l.e.x.u.s.viewmodel.PlexusViewModel
 
 class ConnectionFragment : Fragment() {
@@ -22,6 +24,7 @@ class ConnectionFragment : Fragment() {
     private var advertiseButton: Button? = null
     private var discoverButton: Button? = null
     private var sendButton: Button? = null
+    private var messageEditText: EditText? = null
     private var advertiseProgressBar: ProgressBar? = null
     private var discoverProgressBar: ProgressBar? = null
 
@@ -29,9 +32,7 @@ class ConnectionFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return layoutInflater.inflate(R.layout.fragment_connection, container, false)
-    }
+    ): View? = layoutInflater.inflate(R.layout.fragment_connection, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         findViewsByIds(view)
@@ -43,18 +44,19 @@ class ConnectionFragment : Fragment() {
     private fun findViewsByIds(view: View) = with(view) {
         advertiseButton = findViewById(R.id.advertiseButton)
         discoverButton = findViewById(R.id.discoverButton)
+        messageEditText = findViewById(R.id.messageEditText)
         sendButton = findViewById(R.id.sendButton)
         advertiseProgressBar = findViewById(R.id.advertiseProgress)
         discoverProgressBar = findViewById(R.id.discoverProgress)
     }
 
     private fun observeLiveData() {
-        observeShowSendButtonLiveData()
         observeConnectionAlertDialogLiveData()
         observeCoarseLocationAlertDialogLiveData()
         observeShowToastLiveData()
         observeIsAdvertisingLiveData()
         observeIsDiscoveringLiveData()
+        observeShowChatLiveData()
     }
 
     private fun setListeners() {
@@ -69,15 +71,22 @@ class ConnectionFragment : Fragment() {
     }
 
     @SuppressLint("SetTextI18n")
-    private fun observeShowSendButtonLiveData() {
-        viewModel.showSendButtonLiveData
+    private fun observeShowChatLiveData() {
+        viewModel.showChatLiveData
             .observe(viewLifecycleOwner) { endpointId: String ->
+                log("ConnectionFragment.observeShowChatLivData(): endpointId = $endpointId")
                 if (endpointId.isNotBlank()) {
-                    sendButton?.apply {
-                        visibility = VISIBLE
-                        text = "Send \nto $endpointId"
-                        setOnClickListener { viewModel.send(endpointId) }
+                    sendButton?.visibility = VISIBLE
+                    log(
+                        "ConnectionFragment.observeShowChatLivData(): " +
+                                "text = ${messageEditText?.text}"
+                    )
+                    messageEditText?.visibility = VISIBLE
+                    sendButton?.setOnClickListener {
+                        viewModel.sendBytes(endpointId, messageEditText?.text.toString())
+                        messageEditText?.text?.clear()
                     }
+
                 }
             }
     }
@@ -115,6 +124,7 @@ class ConnectionFragment : Fragment() {
 
     private fun observeShowToastLiveData() = viewModel.showToastLiveData
         .observe(viewLifecycleOwner) { toastMessage: String ->
+            log("ConnectionFragment.observeShowToastLiveData(): toastMessage = $toastMessage")
             Toast.makeText(requireActivity(), toastMessage, LENGTH_SHORT).show()
         }
 
