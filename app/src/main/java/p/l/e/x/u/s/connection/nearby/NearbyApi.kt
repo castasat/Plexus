@@ -32,6 +32,24 @@ class NearbyApi(private val appContext: Context) {
         }
     }
 
+    fun acceptConnection(
+        endpointId: String,
+        payloadCallback: PayloadCallback
+    ) {
+        log("NearbyApi.acceptConnection()")
+        Nearby
+            .getConnectionsClient(appContext)
+            .acceptConnection(endpointId, payloadCallback)
+    }
+
+    fun rejectConnection(endpointId: String): Completable = Completable.fromCallable {
+        log("NearbyApi.rejectConnection()")
+        Nearby
+            .getConnectionsClient(appContext)
+            .rejectConnection(endpointId)
+    }
+
+
     fun requestConnection(
         endpointId: String,
         connectionLifecycleCallback: ConnectionLifecycleCallback

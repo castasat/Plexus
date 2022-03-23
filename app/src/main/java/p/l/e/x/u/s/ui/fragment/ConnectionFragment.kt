@@ -97,9 +97,17 @@ class ConnectionFragment : Fragment() {
                 AlertDialog
                     .Builder(requireActivity())
                     .setTitle("Connect to ${info.endpointName}")
-                    .setMessage("Confirm the code matches on both devices: ${info.authenticationDigits}")
-                    .setPositiveButton("Accept", positiveButtonListener)
-                    .setNegativeButton(android.R.string.cancel, negativeButtonListener)
+                    .setMessage(
+                        "Confirm the code matches on both devices: ${info.authenticationDigits}"
+                    )
+                    .setPositiveButton(
+                        "Accept",
+                        positiveButtonListener
+                    )
+                    .setNegativeButton(
+                        android.R.string.cancel,
+                        negativeButtonListener
+                    )
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .show()
             }

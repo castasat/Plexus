@@ -5,7 +5,6 @@ import android.content.DialogInterface.OnClickListener
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.nearby.connection.ConnectionsStatusCodes.*
 import com.google.android.gms.nearby.connection.Payload.Type.*
@@ -18,7 +17,9 @@ import p.l.e.x.u.s.connection.nearby.NearbyApi
 
 class PlexusRepository(private val appContext: Context) {
     private val nearbyApi by lazy { NearbyApi(appContext) }
-    val isAdvertisingLiveData: LiveData<Boolean> by lazy { nearbyApi.isAdvertisingLiveData }
+
+    val isAdvertisingLiveData: LiveData<Boolean>
+            by lazy { nearbyApi.isAdvertisingLiveData }
 
     private val _isDiscoveringLiveData: MutableLiveData<Boolean>
             by lazy { nearbyApi.isDiscoveringLiveData }
@@ -78,17 +79,9 @@ class PlexusRepository(private val appContext: Context) {
             _connectionAlertDialogLiveData.postValue(
                 Triple(
                     // positive button listener
-                    OnClickListener { _, _ ->
-                        Nearby
-                            .getConnectionsClient(appContext)
-                            .acceptConnection(endpointId, payloadCallback)
-                    },
+                    OnClickListener {_,_ -> nearbyApi.acceptConnection(endpointId, payloadCallback) },
                     // negative button listener
-                    OnClickListener { _, _ ->
-                        Nearby
-                            .getConnectionsClient(appContext)
-                            .rejectConnection(endpointId)
-                    },
+                    OnClickListener{_,_ -> nearbyApi.rejectConnection(endpointId) },
                     // connectionInfo
                     info
                 )
@@ -251,8 +244,10 @@ class PlexusRepository(private val appContext: Context) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
                 .switchMapCompletable { (endpointId: String, message: String) ->
-                    log("PlexusRepository.subscribeToSendBytesToEndpointProcessor(): " +
-                            "endpointId = $endpointId, message = $message")
+                    log(
+                        "PlexusRepository.subscribeToSendBytesToEndpointProcessor(): " +
+                                "endpointId = $endpointId, message = $message"
+                    )
                     nearbyApi.sendBytes(endpointId, message)
                 }
                 .subscribe(
